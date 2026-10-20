@@ -166,6 +166,7 @@ cp .env.example .env     # fill in POSTGRES_*, JWT_SECRET, ADMIN_*, PUBLIC_*, em
 # Local run (Mac): site on http://localhost:8080, API on :3000, db on 127.0.0.1:5432
 pnpm docker:dev          # builds and starts the stack
 pnpm docker:dev:down     # stops it (data kept); add -v to the underlying command to also delete the database and uploads
+# or: put COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml in your local .env, then a plain `docker compose up --build -d` is also on localhost
 
 # Production (the server): the base file only
 docker compose up -d --build
