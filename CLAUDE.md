@@ -164,8 +164,8 @@ Images are built from the **repo root** (the pnpm lockfile lives there), base im
 cp .env.example .env     # fill in POSTGRES_*, JWT_SECRET, ADMIN_*, PUBLIC_*, emails (never commit it)
 
 # Local run (Mac): site on http://localhost:8080, API on :3000, db on 127.0.0.1:5432
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-docker compose -f docker-compose.yml -f docker-compose.dev.yml down        # add -v to also delete the database and uploads
+pnpm docker:dev          # creates the external "edge" network if missing, then builds and starts the stack
+pnpm docker:dev:down     # stops it (data kept); add -v to the underlying command to also delete the database and uploads
 
 # Production (the server): the base file only
 docker compose up -d --build
@@ -175,7 +175,8 @@ docker compose config -q # validates the file and the .env values
 Rules (the host also runs other projects behind a shared Caddy and a backup script):
 
 - The database service **must stay named `db`**: `/opt/proxy/backup.sh` finds PostgreSQL by that name. Container names are prefixed `bde-site-` to avoid clashes.
-- Caddy reaches the containers through the **external Docker network `edge`** (`docker network create edge` once if it does not exist). `api` and `web` join it, `db` does not.
+- Caddy reaches the containers through the **external Docker network `edge`** (`docker network create edge` once if it does not exist; locally `pnpm docker:dev` does it for you).
+  `edge` is external in the production file **and** in the dev workflow: plain `docker compose up` fails with "network edge declared as external" until it exists. `api` and `web` join it, `db` does not.
   Caddy targets `bde-site-web:8080` and `bde-site-api:3000` (container names, unique on the shared network). Route `/api/*` and `/uploads/*` to the api, everything else to the web.
 - **No ports are published in production** and there is no Caddy service here. Ports are only published by `docker-compose.dev.yml` (127.0.0.1), never copy that file to the server.
 - Startup order: `db` healthy -> `api` runs `prisma migrate deploy`, creates the first admin if the table is empty (done by the app, not the entrypoint), then listens -> health checks on all services.

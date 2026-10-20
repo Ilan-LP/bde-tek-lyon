@@ -1,6 +1,6 @@
-# Local use only (never on the server): adds the host ports and the edge network that the real
-# proxy normally provides. Use it together with the production file:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Local use only (never on the server): adds the host ports that the real proxy makes unnecessary.
+# "edge" stays external here too, exactly like in production: `pnpm docker:dev` creates it
+# on your machine when it is missing, then starts the stack.
 services:
   db:
     ports: ['127.0.0.1:5432:5432']
@@ -18,9 +18,3 @@ services:
       args:
         VITE_API_URL: http://localhost:3000
     ports: ['127.0.0.1:8080:8080']
-
-networks:
-  # !override replaces the production definition ("external: true"), so compose creates a local
-  # network instead of looking for the real one.
-  edge: !override
-    driver: bridge

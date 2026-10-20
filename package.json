@@ -12,7 +12,9 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "docker:dev": "docker network inspect edge >/dev/null 2>&1 || docker network create edge && docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
+    "docker:dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
