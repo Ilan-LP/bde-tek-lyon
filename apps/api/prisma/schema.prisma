@@ -1,0 +1,9 @@
+// No models yet: they are added task by task.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

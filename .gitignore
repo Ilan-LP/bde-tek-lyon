@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets: never commit real values, use .env.example as the template
+.env
+.env.*
+!.env.example
+
+# Generated Prisma client
+apps/api/src/generated/
+
+.DS_Store
+*.log

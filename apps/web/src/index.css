@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Gagalin';
+  src: url('/fonts/Gagalin-Regular.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('/fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+/* Brand tokens, see brand/visual_identity.md */
+@theme {
+  --color-wave-blue: #145da0;
+  --color-wave-navy: #050a30;
+  --color-wave-sky: #b9d1f9;
+  --color-wave-offwhite: #e8e8e8;
+  --color-wave-gray: #8a8d91;
+
+  --font-display: 'Gagalin', sans-serif;
+  --font-body: 'Bebas Neue', sans-serif;
+}
+
+body {
+  @apply bg-wave-offwhite text-wave-navy font-body tracking-wider;
+}

@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+
+# pnpm 11 blocks dependency install scripts unless explicitly allowed.
+allowBuilds:
+  '@prisma/engines': true # downloads Prisma engine binaries
+  prisma: true
+  esbuild: true # native binary used by tsx and Vite
+  workerd: false # not needed
