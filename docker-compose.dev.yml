@@ -1,0 +1,26 @@
+# Local use only (never on the server): adds the host ports and the edge network that the real
+# proxy normally provides. Use it together with the production file:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  db:
+    ports: ['127.0.0.1:5432:5432']
+
+  api:
+    ports: ['127.0.0.1:3000:3000']
+    environment:
+      # The site is served on :8080 here (CORS only allows PUBLIC_SITE_URL) and the browser
+      # reaches the api directly on :3000.
+      PUBLIC_SITE_URL: http://localhost:8080
+      PUBLIC_API_URL: http://localhost:3000
+
+  web:
+    build:
+      args:
+        VITE_API_URL: http://localhost:3000
+    ports: ['127.0.0.1:8080:8080']
+
+networks:
+  # !override replaces the production definition ("external: true"), so compose creates a local
+  # network instead of looking for the real one.
+  edge: !override
+    driver: bridge

@@ -32,6 +32,7 @@ Version constraints worth knowing:
 │   │   ├── prisma/schema.prisma   Database schema: Admin, Event, Club, Partner
 │   │   ├── prisma/migrations/     SQL migrations (committed)
 │   │   ├── prisma.config.ts       Prisma 7 config (loads the root .env, reads DATABASE_URL)
+│   │   ├── Dockerfile             API image (multi-stage); docker-entrypoint.sh runs migrate deploy, then the server
 │   │   └── src/
 │   │       ├── index.ts           Creates the first admin, then starts the server
 │   │       ├── app.ts             Express app: helmet, CORS, routes, auth guards
@@ -44,6 +45,7 @@ Version constraints worth knowing:
 │   │       └── generated/         Prisma client output (git-ignored)
 │   │   └── uploads/               Default UPLOAD_DIR: uploaded images (git-ignored)
 │   └── web/                  React frontend (@bde-wave/web)
+│       ├── Dockerfile             Web image: Vite build served by nginx-unprivileged; nginx.conf next to it
 │       ├── public/                Static files: brand fonts, favicons
 │       └── src/
 │           ├── main.tsx           Entry point (BrowserRouter)
@@ -59,6 +61,9 @@ Version constraints worth knowing:
 │           │                      admin: auth (login state), useAdminForm, adminValidation, datetime (Paris time)
 │           └── pages/             One file per page (pages/admin/ holds the admin panel, loaded lazily)
 ├── brand/                    Brand assets and visual identity (see brand/visual_identity.md)
+├── docker-compose.yml        Production stack: db, api, web (see "Docker")
+├── docker-compose.dev.yml    Local override: host ports + a local edge network
+├── .dockerignore             Keeps node_modules, .env*, uploads, brand/ out of the images
 ├── eslint.config.mjs         Shared ESLint config for the whole repo
 ├── .prettierrc.json          Shared Prettier config
 ├── tsconfig.base.json        Shared TypeScript options, extended by each app
@@ -148,6 +153,37 @@ are validated by the task that starts using them.
 - Images: `ImageField` uploads right away to `POST /api/admin/upload` and stores the returned URL; the form saves that URL like any other field.
 - Event dates: the form uses `<input type="datetime-local">` interpreted as **Europe/Paris** time (`lib/datetime.ts`) and sends ISO instants to the API.
 - The admin API has no "get one" route: edit pages load the list and pick the item by id (`ItemLoader`).
+
+## Docker
+
+Production runs as three containers (compose project `bde-site`): `db` (PostgreSQL 17), `api` (Express) and `web` (nginx serving the Vite build).
+Images are built from the **repo root** (the pnpm lockfile lives there), base images are pinned to exact versions, and `api`/`web` run as non-root users.
+`web` is nginx instead of static files served by the API because it caches and compresses efficiently, runs unprivileged, and keeps the API a pure JSON service.
+
+```bash
+cp .env.example .env     # fill in POSTGRES_*, JWT_SECRET, ADMIN_*, PUBLIC_*, emails (never commit it)
+
+# Local run (Mac): site on http://localhost:8080, API on :3000, db on 127.0.0.1:5432
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down        # add -v to also delete the database and uploads
+
+# Production (the server): the base file only
+docker compose up -d --build
+docker compose config -q # validates the file and the .env values
+```
+
+Rules (the host also runs other projects behind a shared Caddy and a backup script):
+
+- The database service **must stay named `db`**: `/opt/proxy/backup.sh` finds PostgreSQL by that name. Container names are prefixed `bde-site-` to avoid clashes.
+- Caddy reaches the containers through the **external Docker network `edge`** (`docker network create edge` once if it does not exist). `api` and `web` join it, `db` does not.
+  Caddy targets `bde-site-web:8080` and `bde-site-api:3000` (container names, unique on the shared network). Route `/api/*` and `/uploads/*` to the api, everything else to the web.
+- **No ports are published in production** and there is no Caddy service here. Ports are only published by `docker-compose.dev.yml` (127.0.0.1), never copy that file to the server.
+- Startup order: `db` healthy -> `api` runs `prisma migrate deploy`, creates the first admin if the table is empty (done by the app, not the entrypoint), then listens -> health checks on all services.
+- Data lives in named volumes: `db_data` (PostgreSQL) and `uploads` (mounted on `/data/uploads`, the container's `UPLOAD_DIR`). Do not delete them with `down -v` on the server.
+- Compose reads the same root `.env` as `pnpm dev`. It builds the container `DATABASE_URL` from `POSTGRES_*` and forces `UPLOAD_DIR=/data/uploads`, so the host-side values of those two lines are ignored.
+- `VITE_*` values are **build arguments**: they are baked into the JavaScript, so changing one requires `docker compose build web`. `VITE_API_URL` empty = same origin (recommended in production).
+- Never put secrets in the images or in committed files. `.dockerignore` excludes `.env*`; `VITE_*` values are public by nature.
+- The `prisma` CLI is a production dependency of the api (the container runs `migrate deploy` itself). Keep it pinned to the same version as `@prisma/client`.
 
 ## Rules
 

@@ -1,0 +1,97 @@
+# Production stack. Reached through the shared edge Caddy (network "edge"); nothing is published
+# on the host. Run `docker compose up -d --build` with a filled-in .env (see .env.example).
+name: bde-site
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+services:
+  # The service MUST stay named "db": the host's backup script finds PostgreSQL by that name.
+  db:
+    image: postgres:17.11-alpine
+    container_name: bde-site-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ is read by the container's shell, not by compose.
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [internal]
+    logging: *default-logging
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: bde-site-api:prod
+    container_name: bde-site-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Set here, after env_file, because the .env values are meant for `pnpm dev:api` on the host.
+      # The host name is the container name: unlike "db" it is unique on the shared edge network.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bde-site-db:5432/${POSTGRES_DB}
+      UPLOAD_DIR: /data/uploads
+      PORT: '3000'
+    volumes:
+      - uploads:/data/uploads
+    expose: ['3000']
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s # migrations run before the server starts
+    networks: [internal, edge]
+    logging: *default-logging
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      # Baked into the JavaScript at build time: changing them means rebuilding this image.
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_PARTNERSHIP_EMAIL: ${VITE_PARTNERSHIP_EMAIL:-}
+        VITE_CLUB_EMAIL: ${VITE_CLUB_EMAIL:-}
+    image: bde-site-web:prod
+    container_name: bde-site-web
+    restart: unless-stopped
+    expose: ['8080']
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [edge]
+    logging: *default-logging
+
+volumes:
+  db_data:
+  uploads:
+
+networks:
+  # Private to this project: the database is only reachable from the api.
+  internal:
+    driver: bridge
+  # Shared with the host's Caddy. It already exists (created once by the proxy project).
+  edge:
+    external: true
