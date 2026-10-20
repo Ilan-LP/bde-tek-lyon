@@ -1,9 +1,9 @@
 import { Link } from 'react-router';
+import jellyfish from '../assets/jellyfish_skyblue.png';
 import { formatBadge, formatEventWhen } from '../lib/format';
 import type { EventItem } from '../lib/types';
 import { Button } from './Button';
 import { Card } from './Card';
-import jellyfish from '../assets/jellyfish_skyblue.png';
 
 // The whole card opens the event page (stretched link on the title). The registration button
 // sits above that link so it stays independently clickable.
@@ -11,41 +11,48 @@ export function EventCard({ event, past = false }: { event: EventItem; past?: bo
   const badge = formatBadge(event.startsAt);
 
   return (
-    <Card interactive className="flex flex-col">
+    <Card interactive className="flex w-full flex-col">
       {event.imageUrl ? (
         <img
           src={event.imageUrl}
           alt=""
           loading="lazy"
-          className="border-wave-blue aspect-video w-full border-b-4 object-cover"
+          className="aspect-video w-full object-cover"
         />
       ) : (
-        <div className="from-wave-sky to-wave-offwhite border-wave-blue flex aspect-video w-full items-center justify-center overflow-hidden border-b-4 bg-radial">
-          <img src={jellyfish} alt="" className="h-full object-contain opacity-60" />
+        <div className="from-wave-navy to-wave-blue flex aspect-video w-full items-center justify-center overflow-hidden bg-linear-to-br">
+          <img
+            src={jellyfish}
+            alt=""
+            aria-hidden="true"
+            className="h-4/5 w-auto object-contain opacity-60"
+          />
         </div>
       )}
 
-      <div className="flex flex-1 flex-col gap-3 p-6">
-        <div className="flex items-start gap-4">
-          <div className="bg-wave-yellow/70 flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl leading-none">
-            <span className="font-display text-3xl">{badge.day}</span>
-            <span className="text-lg">{badge.month}</span>
-          </div>
-          <h3 className="font-display text-wave-blue text-2xl leading-tight tracking-normal">
-            <Link
-              to={`/evenements/${event.slug}`}
-              className="after:absolute after:inset-0 after:content-['']"
-            >
-              {event.title}
-            </Link>
-          </h3>
-        </div>
-        <p>{formatEventWhen(event.startsAt, event.endsAt)}</p>
-        <p className="text-wave-blue">{event.location}</p>
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <span
+          className={[
+            'font-label tracking-wave text-wave-navy w-fit rounded-full px-3 py-0.5 text-lg',
+            past ? 'bg-wave-beige' : 'bg-wave-yellow',
+          ].join(' ')}
+        >
+          {badge.day} {badge.month}
+        </span>
+        <h3 className="text-wave-navy text-xl leading-snug font-semibold">
+          <Link
+            to={`/evenements/${event.slug}`}
+            className="after:absolute after:inset-0 after:content-['']"
+          >
+            {event.title}
+          </Link>
+        </h3>
+        <p className="text-wave-muted text-base">{formatEventWhen(event.startsAt, event.endsAt)}</p>
+        <p className="text-wave-blue text-base font-semibold">{event.location}</p>
 
-        <div className="relative mt-auto pt-3">
+        <div className="relative mt-auto pt-2">
           {past ? (
-            <span className="text-wave-gray">Événement terminé</span>
+            <span className="text-wave-muted text-base">Événement terminé</span>
           ) : (
             event.registrationUrl && (
               <Button href={event.registrationUrl} size="sm">

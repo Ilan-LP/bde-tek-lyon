@@ -2,7 +2,7 @@
 // reach the public site unnoticed. `what` says exactly what is missing.
 export function Placeholder({ what }: { what: string }) {
   return (
-    <span className="bg-wave-yellow/70 text-wave-navy rounded-lg px-2 py-0.5">
+    <span className="bg-wave-yellow text-wave-navy rounded-md px-2 py-0.5 text-base font-semibold">
       [À COMPLÉTER : {what}]
     </span>
   );

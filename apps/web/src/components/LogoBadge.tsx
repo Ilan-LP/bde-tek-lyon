@@ -1,7 +1,7 @@
-// Square logo of a club or partner. Without an uploaded logo, shows the initial in a soft outline.
+// Square logo of a club or partner. Without an uploaded logo, shows the initial on a soft gradient.
 export function LogoBadge({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   return (
-    <div className="border-wave-blue bg-wave-offwhite/70 flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4">
+    <div className="border-wave-sky bg-wave-offwhite flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border">
       {logoUrl ? (
         <img
           src={logoUrl}
@@ -10,7 +10,10 @@ export function LogoBadge({ name, logoUrl }: { name: string; logoUrl: string | n
           className="h-full w-full object-contain p-1"
         />
       ) : (
-        <span aria-hidden="true" className="font-display text-wave-blue text-4xl">
+        <span
+          aria-hidden="true"
+          className="from-wave-sky to-wave-tint font-display text-wave-blue flex h-full w-full items-center justify-center bg-linear-to-br text-3xl"
+        >
           {name.charAt(0).toUpperCase()}
         </span>
       )}

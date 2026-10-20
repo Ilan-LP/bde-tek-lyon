@@ -12,6 +12,24 @@
   font-display: swap;
 }
 
+/* Body font. Self-hosted: add Inter-Regular.woff2 and Inter-SemiBold.woff2 to public/fonts.
+   Until they exist, the system sans-serif below is used. */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Brand tokens, see brand/visual_identity.md */
 @theme {
   /* Main palette */
@@ -19,21 +37,51 @@
   --color-wave-navy: #050a30;
   --color-wave-sky: #b9d1f9;
   --color-wave-offwhite: #e8e8e8; /* used instead of pure white everywhere */
-  --color-wave-gray: #8a8d91; /* secondary text */
-  /* Accents: sparingly, for tags, badges and highlights */
+  --color-wave-gray: #8a8d91; /* secondary text, on Deep Navy only (too light for AA on Off-White) */
+  /* Accents: sparingly, for badges and small highlights */
   --color-wave-yellow: #e7de8a;
   --color-wave-green: #b4cfb0;
   --color-wave-pink: #ffdedb;
   --color-wave-beige: #f7eadc;
 
-  --font-display: 'Gagalin', sans-serif; /* titles and hero text */
-  --font-body: 'Bebas Neue', sans-serif; /* everything else */
+  /* Derived tokens (web only) */
+  --color-wave-tint: #dae1ed; /* Sky Blue at 30% over Off-White: alternate section background */
+  --color-wave-blue-dark: #0f4a80; /* hover of Main Blue */
+  --color-wave-muted: #565b66; /* secondary text on light backgrounds (AA: 5.5:1 on Off-White) */
 
-  /* Bebas Neue is tight by default: the brand asks for extra letter-spacing. */
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; /* body text */
+  --font-display: 'Gagalin', sans-serif; /* H1 and H2 only */
+  --font-label: 'Bebas Neue', sans-serif; /* nav, buttons, eyebrows, badges, dates */
+
+  /* Bebas Neue is tight by default: moderate extra spacing for short labels. */
   --tracking-wave: 0.08em;
 
-  /* Soft Deep Navy shadow under the logo: blur 16px, slight downward offset, 55% opacity. */
+  /* Title sizes (fluid). */
+  --text-h1: clamp(2.75rem, 1.7rem + 3.6vw, 4.5rem);
+  --text-h1--line-height: 1.05;
+  --text-h2: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+  --text-h2--line-height: 1.15;
+
+  --radius-card: 1rem; /* 16px */
+  --radius-button: 0.75rem; /* 12px */
+
+  --shadow-card: 0 8px 30px rgb(5 10 48 / 0.08);
+  --shadow-card-hover: 0 14px 36px rgb(5 10 48 / 0.14);
+
+  /* Soft Deep Navy shadow under the logo (admin header). */
   --drop-shadow-logo: 0 6px 16px rgb(5 10 48 / 0.55);
+
+  --animate-float: float 9s ease-in-out infinite;
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-12px);
+    }
+  }
 }
 
 html {
@@ -41,18 +89,55 @@ html {
 }
 
 body {
-  @apply bg-wave-sky text-wave-navy font-body tracking-wave text-xl leading-snug;
+  @apply bg-wave-offwhite text-wave-navy/85 font-sans text-base leading-relaxed antialiased md:text-lg;
+}
+
+/* Page container: 1120px max, same gutters everywhere. */
+@utility container-site {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1120px;
+  padding-inline: 1.25rem;
+  @media (min-width: 768px) {
+    padding-inline: 2rem;
+  }
+}
+
+/* Section rhythm: 64px on mobile, 96px on desktop. */
+@utility section-y {
+  padding-block: 4rem;
+  @media (min-width: 768px) {
+    padding-block: 6rem;
+  }
+}
+
+/* Visible keyboard focus everywhere; lighter ring on dark backgrounds (hero, footer). */
+:focus-visible {
+  outline: 3px solid var(--focus-ring, var(--color-wave-blue));
+  outline-offset: 3px;
+}
+
+.on-dark {
+  --focus-ring: var(--color-wave-sky);
+}
+
+/* Fade-up on scroll (see components/Reveal.tsx). Only when the visitor accepts motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 0.6s ease-out,
+      transform 0.6s ease-out;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-}
-
-/* Visible keyboard focus everywhere. */
-:focus-visible {
-  outline: 4px solid var(--color-wave-navy);
-  outline-offset: 4px;
-  border-radius: 0.75rem;
 }

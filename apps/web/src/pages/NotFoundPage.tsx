@@ -1,5 +1,7 @@
 import { Button } from '../components/Button';
-import { SectionTitle } from '../components/SectionTitle';
+import { PageHeader } from '../components/Hero';
+import { Section } from '../components/Section';
+import { StateMessage } from '../components/StateMessage';
 import { usePageMeta } from '../lib/usePageMeta';
 
 export function NotFoundPage() {
@@ -9,17 +11,19 @@ export function NotFoundPage() {
   });
 
   return (
-    <div className="py-10 text-center md:py-20">
-      <p className="font-display text-wave-blue text-8xl md:text-9xl">404</p>
-      <SectionTitle level={1} className="mt-4 flex flex-col items-center">
-        Page introuvable
-      </SectionTitle>
-      <p className="mx-auto mt-4 max-w-xl text-2xl">
-        Cette page s’est perdue dans les vagues. Retourne à l’accueil pour reprendre le large.
-      </p>
-      <div className="mt-8">
-        <Button to="/">Retour à l’accueil</Button>
-      </div>
-    </div>
+    <>
+      <PageHeader
+        eyebrow="Erreur 404"
+        title="Page introuvable"
+        text="Cette page s’est perdue dans les vagues."
+      />
+      <Section>
+        <div className="mx-auto max-w-xl">
+          <StateMessage action={<Button to="/">Retour à l’accueil</Button>}>
+            Retourne à l’accueil pour reprendre le large.
+          </StateMessage>
+        </div>
+      </Section>
+    </>
   );
 }

@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { errorMessage } from '../lib/api';
 import type { ApiResult } from '../lib/useApi';
 import { Button } from './Button';
-import { Card } from './Card';
+import { CardGridSkeleton } from './Skeleton';
+import { StateMessage } from './StateMessage';
 
 type DataViewProps<T> = {
   result: ApiResult<T>;
@@ -12,44 +13,39 @@ type DataViewProps<T> = {
   empty?: ReactNode;
   /** Shown instead of the generic error when the API answers 404. */
   notFound?: ReactNode;
+  /** Shown while loading; defaults to a grid of card placeholders. */
+  skeleton?: ReactNode;
 };
 
-function Message({ children }: { children: ReactNode }) {
-  return (
-    <Card className="p-8 text-center">
-      <div className="mx-auto max-w-xl text-2xl">{children}</div>
-    </Card>
-  );
-}
-
-// Handles the three states every API-backed section has: loading, error (with retry), empty.
-export function DataView<T>({ result, children, isEmpty, empty, notFound }: DataViewProps<T>) {
+// Handles the three states every API-backed section has: loading (skeleton), error (with retry), empty.
+export function DataView<T>({
+  result,
+  children,
+  isEmpty,
+  empty,
+  notFound,
+  skeleton,
+}: DataViewProps<T>) {
   const { data, error, loading, reload } = result;
 
-  if (loading) {
-    return (
-      <p
-        role="status"
-        className="text-wave-blue py-12 text-center text-2xl motion-safe:animate-pulse"
-      >
-        Chargement…
-      </p>
-    );
-  }
+  if (loading) return <>{skeleton ?? <CardGridSkeleton />}</>;
   if (error) {
     if (error.status === 404 && notFound) return <>{notFound}</>;
     return (
       <div role="alert">
-        <Message>
-          <p>{errorMessage(error)}</p>
-          <Button size="sm" onClick={reload} className="mt-5">
-            Réessayer
-          </Button>
-        </Message>
+        <StateMessage
+          action={
+            <Button size="sm" variant="secondary" onClick={reload}>
+              Réessayer
+            </Button>
+          }
+        >
+          {errorMessage(error)}
+        </StateMessage>
       </div>
     );
   }
   if (data === undefined) return null;
-  if (isEmpty?.(data)) return <Message>{empty}</Message>;
+  if (isEmpty?.(data)) return <StateMessage>{empty}</StateMessage>;
   return <>{children(data)}</>;
 }

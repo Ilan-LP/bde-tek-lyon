@@ -47,14 +47,15 @@ Version constraints worth knowing:
 │   └── web/                  React frontend (@bde-wave/web)
 │       ├── Dockerfile             Web image: Vite build served by nginx-unprivileged; nginx.conf next to it
 │       ├── nginx.dev-proxy.conf   Local only: proxies /api and /uploads to the api (mounted by docker-compose.dev.yml)
-│       ├── public/                Static files: brand fonts, favicons
+│       ├── public/                Static files: brand fonts (Gagalin, Bebas Neue), Inter (Inter-Regular.woff2, Inter-SemiBold.woff2), favicons
 │       └── src/
 │           ├── main.tsx           Entry point (BrowserRouter)
 │           ├── App.tsx            Route table (all pages inside the shared Layout)
 │           ├── index.css          Tailwind import, @font-face and brand tokens (@theme)
-│           ├── assets/            Logos imported by components (wave logo, jellyfish watermark)
-│           ├── components/        Layout, Header, Footer, PageBackground, Button, Card, SectionTitle,
-│           │                      DataView (loading/error/empty), EventCard, LogoBadge, Placeholder
+│           ├── assets/            Logos imported by components (wave logo blue/white, jellyfish)
+│           ├── components/        Layout, Header (sticky), Footer, PageBackground, Section (rhythm + alternating bg),
+│           │                      Hero / PageHeader (gradient + WaveDivider), Button, Card, SectionTitle, Reveal (fade-up),
+│           │                      DataView (skeleton/error/empty), Skeleton, StateMessage, EventCard, LogoBadge, Placeholder
 │           │   └── admin/         Admin panel pieces: AdminRoot, RequireAdmin (guard), AdminLayout (sidebar),
 │           │                      ResourceList (shared list table), form fields, ImageField, ConfirmDialog...
 │           ├── content/site.ts    Editable texts: mission, bureau members, legal details
@@ -131,8 +132,15 @@ are validated by the task that starts using them.
 - Routes (French URLs): `/` Accueil, `/evenements` (+ `/evenements/:slug`), `/clubs`, `/partenaires`, `/a-propos`, `/mentions-legales`, `*` 404.
   All pages share `Layout` (background, header, footer). Each page calls `usePageMeta` for its title, description and Open Graph tags.
 - Data comes from the public API through `lib/api.ts` + `useApi`. Wrap every API-backed section in `DataView`: it handles loading, error (with retry) and empty states.
-- Design follows `brand/visual_identity.md` and lives in tokens/components, not in pages: colors, fonts, tracking and the logo shadow are in the `@theme` block of `index.css`;
-  use `Button`, `Card`, `SectionTitle`, `PageBackground`. Outline (4px Main Blue) instead of heavy fills, off-white instead of white, 2-3 palette colors per section.
+- Design follows `brand/visual_identity.md` adapted to the web (not the poster rules), and lives in tokens/components, not in pages. Tokens are in the `@theme` block of `index.css`:
+  palette (+ `wave-tint` for alternate sections, `wave-blue-dark`, `wave-muted` for secondary text: the brand Gray #8a8d91 is not AA on Off-White, so it is only used on Deep Navy),
+  `font-sans` (Inter, body), `font-display` (Gagalin: only H1/H2, via `text-h1` / `text-h2`), `font-label` (Bebas Neue: nav, buttons, eyebrows, badges, dates, never paragraphs),
+  `rounded-card` / `rounded-button`, `shadow-card`, `container-site` (1120px), `section-y` (64px / 96px).
+- Page structure: every public page is a stack of full-width sections. Top = `Hero` (home) or `PageHeader` (inner pages): Deep Navy → Main Blue gradient, H1, wave divider.
+  Then `Section` blocks alternating `tone="light"` (Off-White) and `tone="tint"`; `blob` adds the one subtle blurred shape allowed outside the hero. Footer is Deep Navy.
+  Use `Button` (variants primary / secondary / light / ghost), `Card`, `SectionTitle` (eyebrow + title + subtitle), `Reveal` (fade-up, respects reduced motion).
+  Empty and error states use `StateMessage` (jellyfish + one line); loading uses `Skeleton`. Inter is self-hosted: `Inter-Regular.woff2` and `Inter-SemiBold.woff2` in `public/fonts`.
+  The admin panel shares `Button`, `Card`, `DataView` and `PageBackground`, so it inherits their look.
 - Config: the web app reads `VITE_API_URL`, `VITE_CLUB_EMAIL`, `VITE_PARTNERSHIP_EMAIL` from the **root** `.env` (`envDir` in `vite.config.ts`; only `VITE_` variables reach the browser).
   The "Créer ton club" and "Devenir partenaire" buttons are `mailto:` links with a prefilled French subject and body. If an email is not set, a visible placeholder is shown.
 - Missing information is written `À COMPLÉTER` (component `Placeholder`). Search for it before going live: `content/site.ts` and the pages.

@@ -11,13 +11,24 @@ type ButtonProps = {
   /** Real button only: "submit" sends the surrounding form. */
   type?: 'button' | 'submit';
   disabled?: boolean;
-  /** For toggle buttons: shows the button as selected. */
+  /** For toggle buttons: filled when selected, outlined otherwise (overrides `variant`). */
   pressed?: boolean;
+  /**
+   * primary: filled Main Blue. secondary: Main Blue outline.
+   * light / ghost: for dark backgrounds (filled Off-White / Off-White outline).
+   */
+  variant?: 'primary' | 'secondary' | 'light' | 'ghost';
   size?: 'md' | 'sm';
   className?: string;
 };
 
-// Brand buttons: a simple Main Blue outline (4px), transparent fill, never a heavy color block.
+const variants = {
+  primary: 'bg-wave-blue text-wave-offwhite hover:bg-wave-blue-dark',
+  secondary: 'border-[1.5px] border-wave-blue text-wave-blue hover:bg-wave-blue/10',
+  light: 'bg-wave-offwhite text-wave-navy hover:bg-wave-sky',
+  ghost: 'border-[1.5px] border-wave-offwhite/70 text-wave-offwhite hover:bg-wave-offwhite/10',
+};
+
 export function Button({
   children,
   to,
@@ -26,15 +37,16 @@ export function Button({
   type = 'button',
   disabled = false,
   pressed,
+  variant = 'primary',
   size = 'md',
   className = '',
 }: ButtonProps) {
+  const style = pressed === undefined ? variant : pressed ? 'primary' : 'secondary';
   const classes = [
-    'inline-flex items-center justify-center rounded-full border-4 border-wave-blue',
-    'text-wave-blue transition-colors motion-reduce:transition-none',
-    'hover:bg-wave-sky/50 disabled:cursor-not-allowed disabled:opacity-50',
-    pressed ? 'bg-wave-sky/70' : 'bg-wave-offwhite/30',
-    size === 'md' ? 'px-7 py-2 text-2xl' : 'px-5 py-1 text-xl',
+    'inline-flex min-h-11 items-center justify-center gap-2 rounded-button font-label tracking-wave',
+    'transition-colors motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50',
+    size === 'md' ? 'px-6 text-xl' : 'px-4 text-lg',
+    variants[style],
     className,
   ].join(' ');
 

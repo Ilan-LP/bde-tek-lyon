@@ -1,9 +1,13 @@
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { DataView } from '../components/DataView';
+import { PageHeader } from '../components/Hero';
 import { LogoBadge } from '../components/LogoBadge';
 import { Placeholder } from '../components/Placeholder';
+import { Reveal } from '../components/Reveal';
+import { Section } from '../components/Section';
 import { SectionTitle } from '../components/SectionTitle';
+import { CardGridSkeleton } from '../components/Skeleton';
 import { config } from '../lib/config';
 import { mailto } from '../lib/mailto';
 import type { Club } from '../lib/types';
@@ -36,60 +40,73 @@ export function ClubsPage() {
   const clubs = useApi<Club[]>('/api/clubs');
 
   return (
-    <div>
-      <SectionTitle level={1} subtitle="Des étudiants qui se retrouvent autour d’une passion.">
-        Clubs
-      </SectionTitle>
+    <>
+      <PageHeader
+        eyebrow="Vie associative"
+        title="Clubs"
+        text="Des étudiants qui se retrouvent autour d’une passion."
+      />
 
-      <div className="mt-10">
+      <Section>
         <DataView
           result={clubs}
+          skeleton={
+            <CardGridSkeleton count={4} image={false} className="grid gap-6 md:grid-cols-2" />
+          }
           isEmpty={(list) => list.length === 0}
           empty="Aucun club n’est encore présenté ici. Tu peux être le premier à en créer un !"
         >
           {(list) => (
-            <ul className="grid gap-8 md:grid-cols-2">
-              {list.map((club) => (
+            <ul className="grid gap-6 md:grid-cols-2">
+              {list.map((club, index) => (
                 <li key={club.id} className="flex">
-                  <Card className="flex w-full flex-col gap-4 p-6">
-                    <div className="flex items-center gap-4">
-                      <LogoBadge name={club.name} logoUrl={club.logoUrl} />
-                      <h2 className="font-display text-wave-blue text-3xl leading-tight tracking-normal">
-                        {club.name}
-                      </h2>
-                    </div>
-                    <p className="text-2xl whitespace-pre-line">{club.description}</p>
-                    {club.contactEmail && (
-                      <p className="mt-auto">
-                        <a
-                          href={`mailto:${club.contactEmail}`}
-                          className="text-wave-blue underline"
-                        >
-                          {club.contactEmail}
-                        </a>
-                      </p>
-                    )}
-                  </Card>
+                  <Reveal delay={(index % 2) * 80} className="flex w-full">
+                    <Card className="flex w-full flex-col gap-4 p-6">
+                      <div className="flex items-center gap-4">
+                        <LogoBadge name={club.name} logoUrl={club.logoUrl} />
+                        <h2 className="text-wave-navy text-xl leading-snug font-semibold">
+                          {club.name}
+                        </h2>
+                      </div>
+                      <p className="whitespace-pre-line">{club.description}</p>
+                      {club.contactEmail && (
+                        <p className="mt-auto">
+                          <a
+                            href={`mailto:${club.contactEmail}`}
+                            className="text-wave-blue font-semibold underline underline-offset-4"
+                          >
+                            {club.contactEmail}
+                          </a>
+                        </p>
+                      )}
+                    </Card>
+                  </Reveal>
                 </li>
               ))}
             </ul>
           )}
         </DataView>
-      </div>
+      </Section>
 
-      <Card className="mt-20 flex flex-col items-start gap-4 p-8">
-        <h2 className="font-display text-wave-blue text-4xl tracking-normal">Créer ton club</h2>
-        <p className="max-w-2xl text-2xl">
-          Une idée de club ? Écris-nous : on t’aide à le lancer et à trouver tes premiers membres.
-        </p>
-        {config.clubEmail ? (
-          <Button href={mailto(config.clubEmail, createClubMail.subject, createClubMail.body)}>
+      <Section tone="tint" blob>
+        <Reveal className="max-w-[65ch]">
+          <SectionTitle
+            eyebrow="Lance-toi"
+            subtitle="Une idée de club ? Écris-nous : on t’aide à le lancer et à trouver tes premiers membres."
+          >
             Créer ton club
-          </Button>
-        ) : (
-          <Placeholder what="adresse e-mail pour la création de clubs (VITE_CLUB_EMAIL)" />
-        )}
-      </Card>
-    </div>
+          </SectionTitle>
+          <div className="mt-8">
+            {config.clubEmail ? (
+              <Button href={mailto(config.clubEmail, createClubMail.subject, createClubMail.body)}>
+                Créer ton club
+              </Button>
+            ) : (
+              <Placeholder what="adresse e-mail pour la création de clubs (VITE_CLUB_EMAIL)" />
+            )}
+          </div>
+        </Reveal>
+      </Section>
+    </>
   );
 }

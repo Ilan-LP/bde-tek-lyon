@@ -1,8 +1,12 @@
 import { useParams } from 'react-router';
+import jellyfish from '../assets/jellyfish_skyblue.png';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { DataView } from '../components/DataView';
-import { SectionTitle } from '../components/SectionTitle';
+import { PageHeader } from '../components/Hero';
+import { Section } from '../components/Section';
+import { CardGridSkeleton } from '../components/Skeleton';
+import { StateMessage } from '../components/StateMessage';
 import { formatEventWhen } from '../lib/format';
 import type { EventItem } from '../lib/types';
 import { useApi } from '../lib/useApi';
@@ -12,6 +16,7 @@ export function EventDetailPage() {
   const { slug = '' } = useParams();
   const event = useApi<EventItem>(`/api/events/${encodeURIComponent(slug)}`);
   const data = event.data;
+  const notFound = event.error?.status === 404;
 
   usePageMeta({
     title: data?.title ?? 'Événement',
@@ -21,52 +26,80 @@ export function EventDetailPage() {
     image: data?.imageUrl ?? undefined,
   });
 
-  const backLink = (
-    <Button to="/evenements" size="sm">
-      ← Tous les événements
-    </Button>
-  );
-
   return (
-    <div>
-      <div className="mb-8">{backLink}</div>
-      <DataView
-        result={event}
-        notFound={
-          <Card className="p-8 text-center">
-            <SectionTitle level={1}>Événement introuvable</SectionTitle>
-            <p className="mx-auto mt-4 max-w-xl text-2xl">
+    <>
+      <PageHeader
+        eyebrow="Événement"
+        title={data?.title ?? (notFound ? 'Événement introuvable' : 'Événement')}
+        text={
+          data ? `${formatEventWhen(data.startsAt, data.endsAt)} · ${data.location}` : undefined
+        }
+      />
+
+      <Section>
+        <div className="mb-10">
+          <Button to="/evenements" size="sm" variant="secondary">
+            ← Tous les événements
+          </Button>
+        </div>
+        <DataView
+          result={event}
+          skeleton={<CardGridSkeleton count={1} className="grid max-w-2xl" />}
+          notFound={
+            <StateMessage
+              action={
+                <Button to="/evenements" size="sm">
+                  Voir les événements
+                </Button>
+              }
+            >
               Cet événement n’existe pas ou n’est plus affiché. Regarde les autres événements du BDE
               !
-            </p>
-          </Card>
-        }
-      >
-        {(item) => (
-          <article className="grid gap-10 lg:grid-cols-[1.2fr_1fr]">
-            <div>
-              <SectionTitle level={1}>{item.title}</SectionTitle>
-              <p className="mt-6 text-2xl">{formatEventWhen(item.startsAt, item.endsAt)}</p>
-              <p className="text-wave-blue mt-1 text-2xl">{item.location}</p>
-              <p className="mt-8 max-w-2xl text-2xl leading-relaxed whitespace-pre-line">
-                {item.description}
-              </p>
-              {item.registrationUrl && (
-                <div className="mt-10">
-                  <Button href={item.registrationUrl}>S’inscrire</Button>
-                </div>
-              )}
-            </div>
-            {item.imageUrl && (
-              <img
-                src={item.imageUrl}
-                alt={`Affiche de l’événement ${item.title}`}
-                className="border-wave-blue w-full self-start rounded-3xl border-4 object-cover"
-              />
-            )}
-          </article>
-        )}
-      </DataView>
-    </div>
+            </StateMessage>
+          }
+        >
+          {(item) => (
+            <article className="grid items-start gap-10 lg:grid-cols-[1.3fr_1fr]">
+              <div>
+                <h2 className="sr-only">Description</h2>
+                <p className="max-w-[65ch] text-lg leading-relaxed whitespace-pre-line">
+                  {item.description}
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={`Affiche de l’événement ${item.title}`}
+                    className="border-wave-sky shadow-card rounded-card w-full border object-cover"
+                  />
+                ) : (
+                  <div className="from-wave-navy to-wave-blue rounded-card shadow-card flex aspect-video w-full items-center justify-center overflow-hidden bg-linear-to-br">
+                    <img
+                      src={jellyfish}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-4/5 w-auto opacity-60"
+                    />
+                  </div>
+                )}
+                <Card className="space-y-4 p-6">
+                  <div>
+                    <p className="font-label tracking-wave text-wave-blue text-lg">Quand</p>
+                    <p>{formatEventWhen(item.startsAt, item.endsAt)}</p>
+                  </div>
+                  <div>
+                    <p className="font-label tracking-wave text-wave-blue text-lg">Où</p>
+                    <p>{item.location}</p>
+                  </div>
+                  {item.registrationUrl && <Button href={item.registrationUrl}>S’inscrire</Button>}
+                </Card>
+              </div>
+            </article>
+          )}
+        </DataView>
+      </Section>
+    </>
   );
 }

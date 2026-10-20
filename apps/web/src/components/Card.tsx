@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-// Brand card: Main Blue outline (4px), soft rounded corners, translucent Off-White fill.
-// `interactive` adds a hover tint for cards that are entirely clickable.
+// Card: Off-White fill, 1px Sky Blue border, 16px radius, soft shadow.
+// `interactive` adds a subtle lift on hover for cards that are entirely clickable.
 export function Card({
   children,
   interactive = false,
@@ -14,9 +14,11 @@ export function Card({
   return (
     <article
       className={[
-        'relative overflow-hidden rounded-3xl border-4 border-wave-blue bg-wave-offwhite/60',
-        'backdrop-blur-sm transition-colors motion-reduce:transition-none',
-        interactive ? 'hover:bg-wave-sky/40' : '',
+        'rounded-card border-wave-sky bg-wave-offwhite shadow-card relative overflow-hidden border',
+        'transition duration-200 motion-reduce:transition-none',
+        interactive
+          ? 'hover:shadow-card-hover motion-safe:hover:-translate-y-1 motion-reduce:hover:shadow-card-hover'
+          : '',
         className,
       ].join(' ')}
     >
