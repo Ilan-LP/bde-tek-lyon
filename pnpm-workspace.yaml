@@ -6,4 +6,5 @@ allowBuilds:
   '@prisma/engines': true # downloads Prisma engine binaries
   prisma: true
   esbuild: true # native binary used by tsx and Vite
+  argon2: true # native password hashing; uses a prebuilt binary, compiles only as a fallback
   workerd: false # not needed

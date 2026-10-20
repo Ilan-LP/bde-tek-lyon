@@ -1,4 +1,3 @@
-// No models yet: they are added task by task.
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -6,4 +5,51 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// Every admin can do everything: there are no roles or permissions.
+model Admin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Event {
+  id              String    @id @default(uuid())
+  title           String
+  slug            String    @unique
+  description     String
+  startsAt        DateTime
+  endsAt          DateTime?
+  location        String
+  imageUrl        String?
+  registrationUrl String? // external link, e.g. HelloAsso
+  published       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Club {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  description  String
+  logoUrl      String?
+  contactEmail String?
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Partner {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  advantage   String? // the student perk
+  logoUrl     String?
+  websiteUrl  String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
