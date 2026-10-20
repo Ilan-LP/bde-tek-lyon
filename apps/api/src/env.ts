@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { z } from 'zod';
 import { emailSchema, passwordSchema } from './lib/validation.js';
 
@@ -13,6 +14,18 @@ const envSchema = z.object({
   ADMIN_PASSWORD: passwordSchema,
   // Reduced to its origin (no path, no trailing slash): it is the only origin allowed by CORS.
   PUBLIC_SITE_URL: z.url().transform((url) => new URL(url).origin),
+  // Public address of this API, used to build the URLs of uploaded files.
+  // Defaults to http://localhost:<PORT> (see below).
+  PUBLIC_API_URL: z
+    .url()
+    .transform((url) => new URL(url).origin)
+    .optional(),
+  // Where uploaded images are stored. Relative paths are resolved from the API's working directory.
+  UPLOAD_DIR: z
+    .string()
+    .min(1)
+    .default('./uploads')
+    .transform((dir) => path.resolve(dir)),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -25,4 +38,7 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  PUBLIC_API_URL: parsed.data.PUBLIC_API_URL ?? `http://localhost:${parsed.data.PORT}`,
+};

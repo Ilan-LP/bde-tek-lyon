@@ -7,6 +7,9 @@ dist/
 .env.*
 !.env.example
 
+# Uploaded images (default UPLOAD_DIR)
+apps/api/uploads/
+
 # Generated Prisma client
 apps/api/src/generated/
 

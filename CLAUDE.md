@@ -38,10 +38,11 @@ Version constraints worth knowing:
 │   │       ├── env.ts             zod validation of environment variables
 │   │       ├── db.ts              Prisma client (pg driver adapter)
 │   │       ├── bootstrap.ts       First admin from ADMIN_EMAIL / ADMIN_PASSWORD
-│   │       ├── lib/               password (argon2), session (JWT + cookie), shared zod schemas
+│   │       ├── lib/               password (argon2), session (JWT + cookie), slug, imageType, shared zod schemas
 │   │       ├── middleware/        requireAuth, errorHandler
-│   │       ├── routes/            auth.ts, admins.ts
+│   │       ├── routes/            auth, admins, events, clubs, partners (public + admin routers each), upload
 │   │       └── generated/         Prisma client output (git-ignored)
+│   │   └── uploads/               Default UPLOAD_DIR: uploaded images (git-ignored)
 │   └── web/                  React frontend (@bde-wave/web)
 │       ├── public/                Static files: brand fonts, logo, favicons
 │       └── src/
@@ -73,8 +74,8 @@ pnpm format         # Prettier write (format:check to only verify)
 Setup: copy `.env.example` to `.env`, fill in the values, and start a PostgreSQL database matching `DATABASE_URL`
 (e.g. `docker run -d -e POSTGRES_PASSWORD=... -e POSTGRES_DB=bde_wave -p 127.0.0.1:5432:5432 postgres:17-alpine`),
 then run `pnpm --filter @bde-wave/api db:migrate`. `.env` is git-ignored and must never be committed.
-The API validates `PORT`, `DATABASE_URL`, `JWT_SECRET` (>= 32 chars), `ADMIN_EMAIL`, `ADMIN_PASSWORD` (>= 12 chars)
-and `PUBLIC_SITE_URL` at startup and refuses to start if one is invalid. `PARTNERSHIP_EMAIL` and `CLUB_EMAIL`
+The API validates `PORT`, `DATABASE_URL`, `JWT_SECRET` (>= 32 chars), `ADMIN_EMAIL`, `ADMIN_PASSWORD` (>= 12 chars),
+`PUBLIC_SITE_URL`, `PUBLIC_API_URL` (default `http://localhost:<PORT>`) and `UPLOAD_DIR` (default `./uploads`) at startup and refuses to start if one is invalid. `PARTNERSHIP_EMAIL` and `CLUB_EMAIL`
 are validated by the task that starts using them.
 
 ## API: auth and admins
@@ -90,6 +91,26 @@ are validated by the task that starts using them.
 - No roles, no permissions, no audit log: every admin can do everything.
 - Errors are JSON with a stable English code (`{ "error": "invalid_credentials" }`). The frontend maps codes to French text.
 - CORS only allows `PUBLIC_SITE_URL`. If the API runs behind a reverse proxy, set Express `trust proxy` so the rate limit sees real client IPs.
+
+## API: content (events, clubs, partners) and uploads
+
+- **Public routes** (no auth, `published: true` only, no `published`/timestamp fields in the answer):
+  `GET /api/events` (upcoming and ongoing, soonest first; `?past=true` for past events, latest first), `GET /api/events/:slug`,
+  `GET /api/clubs`, `GET /api/clubs/:slug`, `GET /api/partners`. Partners have no slug and no detail route.
+- **Admin routes** (behind `requireAuth`, include unpublished items): for each of `/api/admin/events`, `/api/admin/clubs`,
+  `/api/admin/partners`: `GET /` (all), `POST /`, `PATCH /:id` (partial update), `DELETE /:id` (204).
+  Send `null` to clear an optional field. Unknown fields are rejected (strict zod schemas). Each resource lives in one file in
+  `routes/` exporting a public and an admin router.
+- **Slugs** (events, clubs) are generated from the title/name when created (`lib/slug.ts`: accents removed, `-2`, `-3`... if taken)
+  and **never change afterwards**, so public links stay valid when a title is edited.
+- **Upload**: `POST /api/admin/upload`, `multipart/form-data`, one file in the field `image`, jpeg/png/webp only, max 2 MB.
+  The real type is read from the file's first bytes (`lib/imageType.ts`), never from its name or Content-Type. SVG is refused (it can contain scripts).
+  The file is saved as `<random uuid>.<ext>` in `UPLOAD_DIR` and the answer is `{ "url": "<PUBLIC_API_URL>/uploads/<name>" }`.
+  Use that URL in `imageUrl` / `logoUrl`. Files are served under `/uploads` with `nosniff`, a locked-down CSP and no directory listing.
+  Deleting an item does not delete its image file. In production, `UPLOAD_DIR` must be a persistent volume.
+- Link fields (`imageUrl`, `logoUrl`, `websiteUrl`, `registrationUrl`) only accept `http(s)` URLs.
+- Extra error codes: `validation_error` (400, with `issues`), `file_missing` / `file_too_large` / `unsupported_file_type` / `invalid_upload` (400),
+  `not_found` (404), `conflict` (409, unique constraint hit by a race). Unknown paths also answer `404 not_found` in JSON.
 
 ## Rules
 
