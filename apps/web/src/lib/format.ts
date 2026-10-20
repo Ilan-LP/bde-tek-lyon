@@ -39,3 +39,10 @@ export function formatBadge(startsAt: string) {
   const start = new Date(startsAt);
   return { day: badgeDayFormat.format(start), month: badgeMonthFormat.format(start) };
 }
+
+const dateOnlyFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeZone });
+
+// "5 nov. 2026" (admin lists).
+export function formatDate(iso: string) {
+  return dateOnlyFormat.format(new Date(iso));
+}

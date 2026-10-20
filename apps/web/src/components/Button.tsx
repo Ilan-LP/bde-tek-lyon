@@ -8,6 +8,9 @@ type ButtonProps = {
   /** External link or mailto:. Opens in a new tab unless it is a mailto:. */
   href?: string;
   onClick?: () => void;
+  /** Real button only: "submit" sends the surrounding form. */
+  type?: 'button' | 'submit';
+  disabled?: boolean;
   /** For toggle buttons: shows the button as selected. */
   pressed?: boolean;
   size?: 'md' | 'sm';
@@ -20,6 +23,8 @@ export function Button({
   to,
   href,
   onClick,
+  type = 'button',
+  disabled = false,
   pressed,
   size = 'md',
   className = '',
@@ -27,7 +32,7 @@ export function Button({
   const classes = [
     'inline-flex items-center justify-center rounded-full border-4 border-wave-blue',
     'text-wave-blue transition-colors motion-reduce:transition-none',
-    'hover:bg-wave-sky/50',
+    'hover:bg-wave-sky/50 disabled:cursor-not-allowed disabled:opacity-50',
     pressed ? 'bg-wave-sky/70' : 'bg-wave-offwhite/30',
     size === 'md' ? 'px-7 py-2 text-2xl' : 'px-5 py-1 text-xl',
     className,
@@ -53,7 +58,13 @@ export function Button({
     );
   }
   return (
-    <button type="button" onClick={onClick} aria-pressed={pressed} className={classes}>
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={pressed}
+      className={classes}
+    >
       {children}
     </button>
   );

@@ -52,9 +52,12 @@ Version constraints worth knowing:
 │           ├── assets/            Logos imported by components (wave logo, jellyfish watermark)
 │           ├── components/        Layout, Header, Footer, PageBackground, Button, Card, SectionTitle,
 │           │                      DataView (loading/error/empty), EventCard, LogoBadge, Placeholder
+│           │   └── admin/         Admin panel pieces: AdminRoot, RequireAdmin (guard), AdminLayout (sidebar),
+│           │                      ResourceList (shared list table), form fields, ImageField, ConfirmDialog...
 │           ├── content/site.ts    Editable texts: mission, bureau members, legal details
-│           ├── lib/               api client, useApi, usePageMeta (title/OG tags), config (VITE_ env), format, mailto
-│           └── pages/             One file per page
+│           ├── lib/               api client, useApi, usePageMeta (title/OG tags), config (VITE_ env), format, mailto,
+│           │                      admin: auth (login state), useAdminForm, adminValidation, datetime (Paris time)
+│           └── pages/             One file per page (pages/admin/ holds the admin panel, loaded lazily)
 ├── brand/                    Brand assets and visual identity (see brand/visual_identity.md)
 ├── eslint.config.mjs         Shared ESLint config for the whole repo
 ├── .prettierrc.json          Shared Prettier config
@@ -128,6 +131,23 @@ are validated by the task that starts using them.
   The "Créer ton club" and "Devenir partenaire" buttons are `mailto:` links with a prefilled French subject and body. If an email is not set, a visible placeholder is shown.
 - Missing information is written `À COMPLÉTER` (component `Placeholder`). Search for it before going live: `content/site.ts` and the pages.
 - Event times are displayed in the Europe/Paris time zone. Social crawlers that do not run JavaScript only see the default tags of `index.html`.
+
+## Web: admin panel
+
+- Routes under `/admin` (French section URLs, never linked from the public site, `noindex` meta tag added by `AdminRoot`):
+  `/admin/login`, `/admin` (dashboard: counts), `/admin/evenements`, `/admin/clubs`, `/admin/partenaires` (each with `/nouveau` and `/:id` for the form), `/admin/admins`.
+  `App.tsx` loads them lazily (`/admin/*` -> `pages/admin/AdminRoutes.tsx`), so the public bundle does not contain admin code.
+  At deployment also send an `X-Robots-Tag: noindex` header for `/admin` (the meta tag is ignored by crawlers that do not run JavaScript).
+- Login state: `lib/auth.tsx` (`AuthProvider` around the admin area only) asks `GET /api/auth/me` once; the session itself is the httpOnly cookie, JavaScript never sees it.
+  `RequireAdmin` redirects to `/admin/login` when nobody is logged in and brings the user back afterwards. Any admin call answered 401 (expired session) also logs the UI out
+  (`setUnauthorizedHandler` in `lib/api.ts`). Admin calls need `credentials: 'include'` (`apiRequest(..., { credentials: true })`, `useApi(path, { admin: true })`).
+- Events, clubs and partners share the same screens: `ResourceList` (table, published badge, publish toggle, delete with `ConfirmDialog`) and one form page each
+  (`Admin<Resource>FormPage`) built from `TextField`, `CheckboxField`, `ImageField` and `FormShell`. To add a field: update the form page, `lib/types.ts` and the API schema.
+- Forms: `useAdminForm` validates on submit, then live while the user fixes fields, and maps the API error codes to French (`errorMessage` in `lib/api.ts`).
+  `lib/adminValidation.ts` mirrors the API rules (lengths, http(s) links, e-mail, password >= 12) without a validation library: **the API stays the authority**, keep both in sync.
+- Images: `ImageField` uploads right away to `POST /api/admin/upload` and stores the returned URL; the form saves that URL like any other field.
+- Event dates: the form uses `<input type="datetime-local">` interpreted as **Europe/Paris** time (`lib/datetime.ts`) and sends ISO instants to the API.
+- The admin API has no "get one" route: edit pages load the list and pick the item by id (`ItemLoader`).
 
 ## Rules
 
