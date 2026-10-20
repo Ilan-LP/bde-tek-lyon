@@ -1,5 +1,6 @@
-# Production stack. Reached through the shared edge Caddy (network "edge"); nothing is published
-# on the host. Run `docker compose up -d --build` with a filled-in .env (see .env.example).
+# Production stack. Nothing is published on the host, and the stack only has its own private
+# network: connecting a reverse proxy to api/web is up to the deployment (see CLAUDE.md, "Docker").
+# Run `docker compose up -d --build` with a filled-in .env (see .env.example).
 name: bde-site
 
 x-logging: &default-logging
@@ -43,7 +44,7 @@ services:
     env_file: .env
     environment:
       # Set here, after env_file, because the .env values are meant for `pnpm dev:api` on the host.
-      # The host name is the container name: unlike "db" it is unique on the shared edge network.
+      # The host name is the container name, which is unique on the machine.
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@bde-site-db:5432/${POSTGRES_DB}
       UPLOAD_DIR: /data/uploads
       PORT: '3000'
@@ -60,7 +61,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s # migrations run before the server starts
-    networks: [internal, edge]
+    networks: [internal]
     logging: *default-logging
 
   web:
@@ -81,7 +82,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-    networks: [edge]
+    networks: [internal]
     logging: *default-logging
 
 volumes:
@@ -89,9 +90,6 @@ volumes:
   uploads:
 
 networks:
-  # Private to this project: the database is only reachable from the api.
+  # Private to this project.
   internal:
     driver: bridge
-  # Shared with the host's Caddy. It already exists (created once by the proxy project).
-  edge:
-    external: true

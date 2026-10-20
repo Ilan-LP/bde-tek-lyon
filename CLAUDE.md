@@ -62,7 +62,7 @@ Version constraints worth knowing:
 │           └── pages/             One file per page (pages/admin/ holds the admin panel, loaded lazily)
 ├── brand/                    Brand assets and visual identity (see brand/visual_identity.md)
 ├── docker-compose.yml        Production stack: db, api, web (see "Docker")
-├── docker-compose.dev.yml    Local override: host ports + a local edge network
+├── docker-compose.dev.yml    Local override: host ports
 ├── .dockerignore             Keeps node_modules, .env*, uploads, brand/ out of the images
 ├── eslint.config.mjs         Shared ESLint config for the whole repo
 ├── .prettierrc.json          Shared Prettier config
@@ -164,7 +164,7 @@ Images are built from the **repo root** (the pnpm lockfile lives there), base im
 cp .env.example .env     # fill in POSTGRES_*, JWT_SECRET, ADMIN_*, PUBLIC_*, emails (never commit it)
 
 # Local run (Mac): site on http://localhost:8080, API on :3000, db on 127.0.0.1:5432
-pnpm docker:dev          # creates the external "edge" network if missing, then builds and starts the stack
+pnpm docker:dev          # builds and starts the stack
 pnpm docker:dev:down     # stops it (data kept); add -v to the underlying command to also delete the database and uploads
 
 # Production (the server): the base file only
@@ -175,9 +175,9 @@ docker compose config -q # validates the file and the .env values
 Rules (the host also runs other projects behind a shared Caddy and a backup script):
 
 - The database service **must stay named `db`**: `/opt/proxy/backup.sh` finds PostgreSQL by that name. Container names are prefixed `bde-site-` to avoid clashes.
-- Caddy reaches the containers through the **external Docker network `edge`** (`docker network create edge` once if it does not exist; locally `pnpm docker:dev` does it for you).
-  `edge` is external in the production file **and** in the dev workflow: plain `docker compose up` fails with "network edge declared as external" until it exists. `api` and `web` join it, `db` does not.
-  Caddy targets `bde-site-web:8080` and `bde-site-api:3000` (container names, unique on the shared network). Route `/api/*` and `/uploads/*` to the api, everything else to the web.
+- The stack only has one private network, `internal` (the `edge` network was removed on purpose). **Nothing in the compose files connects the shared Caddy to `api` and `web`**:
+  the deployment must do it (for example attach Caddy to `bde-site_internal`, or re-add an external network to `api` and `web`). Caddy would then target `bde-site-web:8080` and `bde-site-api:3000`,
+  routing `/api/*` and `/uploads/*` to the api and everything else to the web.
 - **No ports are published in production** and there is no Caddy service here. Ports are only published by `docker-compose.dev.yml` (127.0.0.1), never copy that file to the server.
 - Startup order: `db` healthy -> `api` runs `prisma migrate deploy`, creates the first admin if the table is empty (done by the app, not the entrypoint), then listens -> health checks on all services.
 - Data lives in named volumes: `db_data` (PostgreSQL) and `uploads` (mounted on `/data/uploads`, the container's `UPLOAD_DIR`). Do not delete them with `down -v` on the server.

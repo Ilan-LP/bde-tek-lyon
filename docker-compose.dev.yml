@@ -1,6 +1,5 @@
-# Local use only (never on the server): adds the host ports that the real proxy makes unnecessary.
-# "edge" stays external here too, exactly like in production: `pnpm docker:dev` creates it
-# on your machine when it is missing, then starts the stack.
+# Local use only (never on the server): publishes the services on 127.0.0.1 so the browser can
+# reach them. Start it with `pnpm docker:dev`.
 services:
   db:
     ports: ['127.0.0.1:5432:5432']
