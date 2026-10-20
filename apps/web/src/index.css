@@ -14,16 +14,45 @@
 
 /* Brand tokens, see brand/visual_identity.md */
 @theme {
+  /* Main palette */
   --color-wave-blue: #145da0;
   --color-wave-navy: #050a30;
   --color-wave-sky: #b9d1f9;
-  --color-wave-offwhite: #e8e8e8;
-  --color-wave-gray: #8a8d91;
+  --color-wave-offwhite: #e8e8e8; /* used instead of pure white everywhere */
+  --color-wave-gray: #8a8d91; /* secondary text */
+  /* Accents: sparingly, for tags, badges and highlights */
+  --color-wave-yellow: #e7de8a;
+  --color-wave-green: #b4cfb0;
+  --color-wave-pink: #ffdedb;
+  --color-wave-beige: #f7eadc;
 
-  --font-display: 'Gagalin', sans-serif;
-  --font-body: 'Bebas Neue', sans-serif;
+  --font-display: 'Gagalin', sans-serif; /* titles and hero text */
+  --font-body: 'Bebas Neue', sans-serif; /* everything else */
+
+  /* Bebas Neue is tight by default: the brand asks for extra letter-spacing. */
+  --tracking-wave: 0.08em;
+
+  /* Soft Deep Navy shadow under the logo: blur 16px, slight downward offset, 55% opacity. */
+  --drop-shadow-logo: 0 6px 16px rgb(5 10 48 / 0.55);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-wave-offwhite text-wave-navy font-body tracking-wider;
+  @apply bg-wave-sky text-wave-navy font-body tracking-wave text-xl leading-snug;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 4px solid var(--color-wave-navy);
+  outline-offset: 4px;
+  border-radius: 0.75rem;
 }

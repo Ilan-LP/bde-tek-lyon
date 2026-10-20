@@ -44,11 +44,16 @@ Version constraints worth knowing:
 │   │       └── generated/         Prisma client output (git-ignored)
 │   │   └── uploads/               Default UPLOAD_DIR: uploaded images (git-ignored)
 │   └── web/                  React frontend (@bde-wave/web)
-│       ├── public/                Static files: brand fonts, logo, favicons
+│       ├── public/                Static files: brand fonts, favicons
 │       └── src/
 │           ├── main.tsx           Entry point (BrowserRouter)
-│           ├── App.tsx            Route table
-│           ├── index.css          Tailwind import + brand tokens (@theme)
+│           ├── App.tsx            Route table (all pages inside the shared Layout)
+│           ├── index.css          Tailwind import, @font-face and brand tokens (@theme)
+│           ├── assets/            Logos imported by components (wave logo, jellyfish watermark)
+│           ├── components/        Layout, Header, Footer, PageBackground, Button, Card, SectionTitle,
+│           │                      DataView (loading/error/empty), EventCard, LogoBadge, Placeholder
+│           ├── content/site.ts    Editable texts: mission, bureau members, legal details
+│           ├── lib/               api client, useApi, usePageMeta (title/OG tags), config (VITE_ env), format, mailto
 │           └── pages/             One file per page
 ├── brand/                    Brand assets and visual identity (see brand/visual_identity.md)
 ├── eslint.config.mjs         Shared ESLint config for the whole repo
@@ -63,7 +68,7 @@ Version constraints worth knowing:
 ```bash
 pnpm install        # install everything
 pnpm dev:api        # API with auto-reload (reads ./.env if present)
-pnpm dev:web        # Vite dev server
+pnpm dev:web        # Vite dev server (http://localhost:5173)
 pnpm build          # build all apps (the API build also runs `prisma generate`)
 pnpm lint           # ESLint on all apps
 pnpm --filter @bde-wave/api db:migrate   # create/apply a migration in development
@@ -111,6 +116,18 @@ are validated by the task that starts using them.
 - Link fields (`imageUrl`, `logoUrl`, `websiteUrl`, `registrationUrl`) only accept `http(s)` URLs.
 - Extra error codes: `validation_error` (400, with `issues`), `file_missing` / `file_too_large` / `unsupported_file_type` / `invalid_upload` (400),
   `not_found` (404), `conflict` (409, unique constraint hit by a race). Unknown paths also answer `404 not_found` in JSON.
+
+## Web: pages and conventions
+
+- Routes (French URLs): `/` Accueil, `/evenements` (+ `/evenements/:slug`), `/clubs`, `/partenaires`, `/a-propos`, `/mentions-legales`, `*` 404.
+  All pages share `Layout` (background, header, footer). Each page calls `usePageMeta` for its title, description and Open Graph tags.
+- Data comes from the public API through `lib/api.ts` + `useApi`. Wrap every API-backed section in `DataView`: it handles loading, error (with retry) and empty states.
+- Design follows `brand/visual_identity.md` and lives in tokens/components, not in pages: colors, fonts, tracking and the logo shadow are in the `@theme` block of `index.css`;
+  use `Button`, `Card`, `SectionTitle`, `PageBackground`. Outline (4px Main Blue) instead of heavy fills, off-white instead of white, 2-3 palette colors per section.
+- Config: the web app reads `VITE_API_URL`, `VITE_CLUB_EMAIL`, `VITE_PARTNERSHIP_EMAIL` from the **root** `.env` (`envDir` in `vite.config.ts`; only `VITE_` variables reach the browser).
+  The "Créer ton club" and "Devenir partenaire" buttons are `mailto:` links with a prefilled French subject and body. If an email is not set, a visible placeholder is shown.
+- Missing information is written `À COMPLÉTER` (component `Placeholder`). Search for it before going live: `content/site.ts` and the pages.
+- Event times are displayed in the Europe/Paris time zone. Social crawlers that do not run JavaScript only see the default tags of `index.html`.
 
 ## Rules
 
