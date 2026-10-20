@@ -46,6 +46,7 @@ Version constraints worth knowing:
 │   │   └── uploads/               Default UPLOAD_DIR: uploaded images (git-ignored)
 │   └── web/                  React frontend (@bde-wave/web)
 │       ├── Dockerfile             Web image: Vite build served by nginx-unprivileged; nginx.conf next to it
+│       ├── nginx.dev-proxy.conf   Local only: proxies /api and /uploads to the api (mounted by docker-compose.dev.yml)
 │       ├── public/                Static files: brand fonts, favicons
 │       └── src/
 │           ├── main.tsx           Entry point (BrowserRouter)
@@ -163,7 +164,7 @@ Images are built from the **repo root** (the pnpm lockfile lives there), base im
 ```bash
 cp .env.example .env     # fill in POSTGRES_*, JWT_SECRET, ADMIN_*, PUBLIC_*, emails (never commit it)
 
-# Local run (Mac): site on http://localhost:8080, API on :3000, db on 127.0.0.1:5432
+# Local run (Mac): site on http://localhost:8080 or http://127.0.0.1:8080 (both work), API on :3000, db on 127.0.0.1:5432
 pnpm docker:dev          # builds and starts the stack
 pnpm docker:dev:down     # stops it (data kept); add -v to the underlying command to also delete the database and uploads
 # or: put COMPOSE_FILE=docker-compose.yml:docker-compose.dev.yml in your local .env, then a plain `docker compose up --build -d` is also on localhost
@@ -179,6 +180,9 @@ Rules (the host also runs other projects behind a shared Caddy and a backup scri
 - The stack only has one private network, `internal` (the `edge` network was removed on purpose). **Nothing in the compose files connects the shared Caddy to `api` and `web`**:
   the deployment must do it (for example attach Caddy to `bde-site_internal`, or re-add an external network to `api` and `web`). Caddy would then target `bde-site-web:8080` and `bde-site-api:3000`,
   routing `/api/*` and `/uploads/*` to the api and everything else to the web.
+- Locally the site and the API share **one origin**, like behind the production reverse proxy: the dev override builds the web with an empty `VITE_API_URL` and mounts `apps/web/nginx.dev-proxy.conf`,
+  so nginx relays `/api` and `/uploads` to the api. The browser never calls port 3000, which is why `localhost` and `127.0.0.1` both work (the API's CORS allows a single origin).
+  If something else already listens on port 3000 (for example `pnpm dev:api`), it no longer interferes with the Docker site, but stop it anyway to avoid confusion.
 - **No ports are published in production** and there is no Caddy service here. Ports are only published by `docker-compose.dev.yml` (127.0.0.1), never copy that file to the server.
 - Startup order: `db` healthy -> `api` runs `prisma migrate deploy`, creates the first admin if the table is empty (done by the app, not the entrypoint), then listens -> health checks on all services.
 - Data lives in named volumes: `db_data` (PostgreSQL) and `uploads` (mounted on `/data/uploads`, the container's `UPLOAD_DIR`). Do not delete them with `down -v` on the server.

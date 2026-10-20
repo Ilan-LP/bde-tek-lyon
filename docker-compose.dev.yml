@@ -7,13 +7,16 @@ services:
   api:
     ports: ['127.0.0.1:3000:3000']
     environment:
-      # The site is served on :8080 here (CORS only allows PUBLIC_SITE_URL) and the browser
-      # reaches the api directly on :3000.
       PUBLIC_SITE_URL: http://localhost:8080
-      PUBLIC_API_URL: http://localhost:3000
+      # Uploaded images are served through the web container (see nginx.dev-proxy.conf).
+      PUBLIC_API_URL: http://localhost:8080
 
   web:
     build:
       args:
-        VITE_API_URL: http://localhost:3000
+        # Empty = same origin: the browser calls /api on the page's own host:port, and nginx
+        # relays it to the api. Works the same on localhost:8080 and 127.0.0.1:8080.
+        VITE_API_URL: ''
     ports: ['127.0.0.1:8080:8080']
+    volumes:
+      - ./apps/web/nginx.dev-proxy.conf:/etc/nginx/dev/proxy.conf:ro

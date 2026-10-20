@@ -27,6 +27,9 @@ ENV VITE_API_URL=$VITE_API_URL \
 COPY tsconfig.base.json ./
 COPY apps/web apps/web
 RUN pnpm --filter @bde-wave/web build
+# Vite copies public/ files with their local permissions (a file saved as 600 would answer 403,
+# because nginx runs as another user). Make everything world-readable.
+RUN chmod -R a+rX apps/web/dist
 
 # ---- runtime: static files behind nginx, as a non-root user (listens on 8080) ----
 FROM nginxinc/nginx-unprivileged:1.28.2-alpine AS runtime
